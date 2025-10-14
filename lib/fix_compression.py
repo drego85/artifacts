@@ -143,6 +143,12 @@ class ZipHeaderFixer:
     A class to fix corrupted ZIP file headers by fixing compression issues
     and synchronizing Central Directory and Local File Header inconsistencies.
     """
+
+    MAX_SUPPORTED_VERSION = 63  # matches zipfile.MAX_EXTRACT_VERSION (6.3)
+    _COMPRESSION_VERSIONS = {
+        0: 10,  # stored (no compression)
+        8: 20,  # deflate
+    }
     
     def __init__(self, zip_path: str, verbose: bool = False):
         """
@@ -164,6 +170,16 @@ class ZipHeaderFixer:
     def _print(self, message: str):
         """Always print message."""
         print(message)
+
+    @staticmethod
+    def _format_version(version: int) -> str:
+        """Return dotted string representation for ZIP version fields."""
+        return f"{version // 10}.{version % 10}"
+
+    @classmethod
+    def _expected_version_for_compression(cls, compression: int) -> int:
+        """Return safest version number for the given compression method."""
+        return cls._COMPRESSION_VERSIONS.get(compression, cls._COMPRESSION_VERSIONS[0])
         
     def check_and_fix(self) -> str:
         """
@@ -257,6 +273,13 @@ class ZipHeaderFixer:
                     if cd_entry.info.compression not in [0, 8]:
                         filename = cd_entry.filename.decode('utf-8', errors='ignore')
                         issues.append(f"Unsupported compression method {cd_entry.info.compression} in '{filename}'")
+
+                    if cd_entry.version_needed > self.MAX_SUPPORTED_VERSION:
+                        filename = cd_entry.filename.decode('utf-8', errors='ignore')
+                        issues.append(
+                            f"Unsupported version needed to extract {self._format_version(cd_entry.version_needed)} "
+                            f"in '{filename}' (max {self._format_version(self.MAX_SUPPORTED_VERSION)})"
+                        )
                         
                 except Exception as e:
                     issues.append(f"Corrupted Central Directory entry {i}: {e}")
@@ -277,6 +300,13 @@ class ZipHeaderFixer:
                     if local_header.info.compression not in [0, 8]:
                         filename = local_header.filename.decode('utf-8', errors='ignore')
                         issues.append(f"Unsupported compression method {local_header.info.compression} in local header for '{filename}'")
+
+                    if local_header.version > self.MAX_SUPPORTED_VERSION:
+                        filename = local_header.filename.decode('utf-8', errors='ignore')
+                        issues.append(
+                            f"Unsupported version needed to extract {self._format_version(local_header.version)} "
+                            f"in local header for '{filename}' (max {self._format_version(self.MAX_SUPPORTED_VERSION)})"
+                        )
                         
                 except Exception as e:
                     issues.append(f"Corrupted Local Header for entry {i}: {e}")
@@ -327,32 +357,61 @@ class ZipHeaderFixer:
             
             # Fix Central Directory entries
             for cd in cd_entries:
+                filename = cd.filename.decode("utf-8", errors='ignore')
+                compression = cd.info.compression
+                expected_version = self._expected_version_for_compression(
+                    compression if compression in [0, 8] else 0
+                )
+
                 if cd.info.compression not in [0, 8]:
-                    filename = cd.filename.decode("utf-8", errors='ignore')
                     self._print(f"Fixing Central Directory header for '{filename}' at offset {hex(cd.offset)}")
                     
                     # Fix compression type, set to none (0)
                     data.set_offset(cd.offset + 0x0a).pack("<H", 0)
                     # Fix compressed size to match uncompressed size
                     data.set_offset(cd.offset + 0x14).pack("<I", cd.info.uncompressed_size)
+                    compression = 0
+                    expected_version = self._expected_version_for_compression(compression)
+                    fixes_applied += 1
+
+                if cd.version_needed > self.MAX_SUPPORTED_VERSION:
+                    self._print(
+                        f"Fixing Central Directory version for '{filename}' at offset {hex(cd.offset)} "
+                        f"(was {self._format_version(cd.version_needed)})"
+                    )
+                    data.set_offset(cd.offset + 0x06).pack("<H", expected_version)
                     fixes_applied += 1
             
             # Fix Local Headers
             for local_header in loc_headers:
+                filename = local_header.filename.decode("utf-8", errors='ignore')
+                compression = local_header.info.compression
+                expected_version = self._expected_version_for_compression(
+                    compression if compression in [0, 8] else 0
+                )
+
                 if local_header.info.compression not in [0, 8]:
-                    filename = local_header.filename.decode("utf-8", errors='ignore')
                     self._print(f"Fixing Local header for '{filename}' at offset {hex(local_header.offset)}")
                     
                     # Fix compression type, set to none (0)
                     data.set_offset(local_header.offset + 0x08).pack("<H", 0)
                     # Fix compressed size
                     data.set_offset(local_header.offset + 0x12).pack("<I", local_header.info.uncompressed_size)
-
+                    compression = 0
+                    expected_version = self._expected_version_for_compression(compression)
                     # Remove extra bytes if present
                     if local_header.info.extra_field_len > 0:
                         data.set_offset(local_header.offset + 0x1c).pack("<H", 0)
                         data.set_offset(local_header.offset + 0x1e + local_header.info.filename_len + local_header.info.extra_field_len).move(-local_header.info.extra_field_len, local_header.info.uncompressed_size)
                     
+                    fixes_applied += 1
+
+                if local_header.version > self.MAX_SUPPORTED_VERSION:
+                    self._print(
+                        f"Fixing Local header version for '{filename}' at offset {hex(local_header.offset)} "
+                        f"(was {self._format_version(local_header.version)})"
+                    )
+                    data.set_offset(local_header.offset + 0x04).pack("<H", expected_version)
                     fixes_applied += 1
 
             # Save fixed file
