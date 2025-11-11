@@ -119,7 +119,3 @@ See [AGENTS.md](AGENTS.md) for extended contributor guidance (coding style, secu
 ## License
 
 Released under [GPL-3.0](LICENSE). Treat every APK as hostile: operate inside isolated VMs, never commit binaries to the repo, and sanitize sensitive data before sharing artifacts.
-
----
-
-*Powered by apkInspector + LiteJDB for fast Android artifact triage.*
