@@ -179,7 +179,7 @@ The information compared concerns: `permission`, `application` and `intent`
 |          Octo         |   31.37    |     0.0     | 20.75  | 17.38 |
 |        Xloader        |    38.1    |     0.0     | 13.73  | 17.27 |
 |      SmsSpy Italy     |   28.57    |     2.11    | 15.69  | 15.45 |
-|       CryCrypto       |   18.18    |     2.08    | 12.24  | 10.84 |
+|      CryCryptor       |   18.18    |     2.08    | 12.24  | 10.84 |
 +-----------------------+------------+-------------+--------+-------+
 ```
 
