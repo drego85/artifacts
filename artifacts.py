@@ -96,7 +96,7 @@ def main():
         apk_file.extractAPK(apkfile, folder)
         md5 = apk_file.md5APK(apkfile)
         filepaths = file_list.get(folder)
-        activity = manifest.info(filepaths)
+        activity = manifest.info(apkfile)
         activity.update(intent.info(filepaths))
         archives = search_file.search_archive(filepaths)
 

@@ -1,8 +1,10 @@
 import os
-import hashlib
-import zipfile
 import shutil
-from . import fix_compression
+import hashlib
+import logging
+from apkInspector.headers import ZipEntry
+
+logging.basicConfig(level=logging.WARNING)
 
 def validateAPK(apkfile):
     # first 4 bytes APK, JAR (ZIP, XLSM): 
@@ -15,52 +17,42 @@ def validateAPK(apkfile):
         return True
 
 def extractAPK(apkfile, folder):
-
-    fixer = fix_compression.ZipHeaderFixer(apkfile, verbose=True)
-    result = fixer.check_and_fix()
-
-    if result == 'fixed':
-        base, ext = os.path.splitext(apkfile)
-        apkfile = f"{base}_fixed{ext}"
-
-
-    if zipfile.is_zipfile(apkfile):
-        with zipfile.ZipFile(apkfile, 'r') as zip_ref:
-            for name in zip_ref.namelist():
-                target_path = os.path.join(folder, name)
-                
-                # Check if a file or directory with the same name already exists
-                if os.path.exists(target_path):
-                    # If it's a directory, rename it
-                    if os.path.isdir(target_path):
-                        new_target_path = target_path + "_folder"
-                        os.rename(target_path, new_target_path)
-                        print(f"Renamed folder '{target_path}' to '{new_target_path}'")
-                
-                try:
-                    # Attempt to extract individual file
-                    zip_ref.extract(name, folder)
-                except zipfile.BadZipFile as e:
-                    # This exception is raised when the ZIP file is corrupt or not a valid ZIP archive.
-                    print(f"Zip error for {name}: {e}")
-                except NotImplementedError as e:
-                    # Raised when the ZIP file uses a compression method not supported by `zipfile`
-                    print(f"Skipping {name}: {e}")
-                except RecursionError as e:
-                    # This occurs if there is infinite recursion during path resolution or directory creation,
-                    # likely caused by malformed ZIP entries or logical errors in handling paths.
-                    print(f"Skipping {name}: {e}")
-                except NotADirectoryError as e:
-                    # Raised when trying to perform an operation on a directory, but a file is expected (or vice versa).
-                    # This can happen if the extracted file structure conflicts with existing files or directories.
-                    print(f"Not A Directory Error {name}: {e}")
-                except OSError as e:
-                    # This is a broad exception for file system-related errors, such as permission issues,
-                    # path length limits, or invalid file names.
-                    print(f"OSError for {name}: {e}")
-    else:
+    if not validateAPK(apkfile):
         print(f"The file {apkfile} under analysis is not an APK, I will proceed with the analysis if it is a DEX.")
         shutil.copy(apkfile, folder)
+        return
+
+    if not os.path.isdir(folder):
+        os.makedirs(folder, exist_ok=True)
+
+    apk_label = os.path.splitext(os.path.basename(apkfile))[0]
+
+    try:
+        with open(apkfile, "rb") as apk_stream:
+            zip_entry = ZipEntry.parse(apk_stream)
+            result_code = zip_entry.extract_all(folder, apk_label)
+    except Exception as exc:
+        raise RuntimeError(f"apkInspector extraction failed: {exc}") from exc
+
+    if result_code not in (0, 2, None):
+        raise RuntimeError(f"apkInspector extract_all returned unexpected code {result_code}")
+
+    extracted_files = list(os.scandir(folder))
+    if not extracted_files:
+        raise RuntimeError("apkInspector reported success but no files were extracted.")
+
+    if apk_label:
+        nested_dir = os.path.join(folder, apk_label)
+        if os.path.isdir(nested_dir):
+            for entry in os.listdir(nested_dir):
+                src = os.path.join(nested_dir, entry)
+                dst = os.path.join(folder, entry)
+                if os.path.exists(dst):
+                    os.remove(dst) if os.path.isfile(dst) else shutil.rmtree(dst)
+                shutil.move(src, dst)
+            shutil.rmtree(nested_dir, ignore_errors=True)
+
+    return
 
         
 def md5APK(apkfile):

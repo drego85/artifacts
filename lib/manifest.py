@@ -1,32 +1,36 @@
 import os
-from . import search_file
-from . import match_regex
+import re
+from typing import Dict, List
 
-def info(filepaths):
-    result = {}
+from apkInspector.axml import parse_apk_for_manifest
 
-    # Check AndroidManifest.xml in filepaths
-    manifest_files = search_file.filename(filepaths, ['AndroidManifest.xml'])
-    
-    if not manifest_files:
-        #print("NO MANIFEST")
+
+def info(apk_path: str) -> Dict[str, List[str]]:
+    """Extract manifest metadata directly from the APK using apkInspector."""
+    result: Dict[str, List[str]] = {}
+
+    if not apk_path or not os.path.isfile(apk_path):
         return result
-    
-    # Get first AndroidManifest.xml
-    manifest_path = manifest_files[0]
-    
-    # Check that it is a file
-    if not os.path.isfile(manifest_path):
+
+    try:
+        # Context: apkInspector CLI (`apkInspector -apk sample.apk -m`) also relies on parse_apk_for_manifest
+        manifest_xml = parse_apk_for_manifest(apk_path, raw=False)
+    except Exception:
         return result
-    
+
+    if not manifest_xml:
+        return result
+
+    if isinstance(manifest_xml, bytes):
+        manifest_xml = manifest_xml.decode("utf-8", errors="ignore")
+
     regex = {
-        "permission": "android.permission.[A-Z_]*",
-        "application": r"com\.[A-Za-z0-9.]*"
+        "permission": r"android\.permission\.[A-Z_]+",
+        "application": r"com\.[A-Za-z0-9.]+",
     }
-    
-    # get permissions and applications
-    for item in regex.keys():
-        match = match_regex.inFile(manifest_path, regex[item])
-        result.update({item: sorted(match)})
-    
+
+    for key, pattern in regex.items():
+        matches = sorted(set(re.findall(pattern, manifest_xml)))
+        result[key] = matches
+
     return result
