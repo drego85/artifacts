@@ -76,6 +76,11 @@ Sample output (truncated):
     "base64": [["MTc4LjIzNi4yNDcuMTI0", "178.236.247.124"]],
     "known": ["ping"]
   },
+  "activity_counts": {
+    "permission": 12,
+    "application": 4,
+    "intent": 7
+  },
   "family": {
     "name": "SpyNote Italy 10/2023",
     "match": 100.0
@@ -90,6 +95,7 @@ Sample output (truncated):
 - **Per-bucket scoring** – for every family we compute the [Jaccard similarity](https://en.wikipedia.org/wiki/Jaccard_index) between the APK bucket and the family bucket (e.g., `permission_score = |perm_apk ∩ perm_family| / |perm_apk ∪ perm_family| * 100`). The same formula is applied to `application` and `intent`.
 - **Final score** – the reported `family.match` is the arithmetic mean of the three bucket scores (all equally weighted). The `family.value` object surfaces the individual bucket percentages so you can tell *why* a match ranked higher (e.g., strong intent overlap but few shared permissions).
 - **Interpreting the report** – identical APK permissions can still yield different percentages if the top-ranked family changes, because each family contributes its own reference set. Log the similarity table (`-s`) to compare how your indicators intersect with multiple candidates.
+- **Raw counts** – the `activity_counts` field in the main JSON result shows how many unique permissions, components, and intents were extracted from the APK, independent of any family match. This is useful when profiling previously unseen samples.
 
 ## CLI Commands
 

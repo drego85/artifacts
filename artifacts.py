@@ -83,6 +83,17 @@ def list_families(db):
 
     print(table)
 
+def activity_counts(activity):
+    summary = {}
+    for bucket in ("permission", "application", "intent"):
+        values = activity.get(bucket) or []
+        if isinstance(values, (set, tuple)):
+            values = list(values)
+        elif isinstance(values, str):
+            values = [values]
+        summary[bucket] = len({v for v in values})
+    return summary
+
 # Main function for APK analysis
 def main():
     db = load_db()
@@ -157,6 +168,7 @@ def main():
             "network": match_network.get(filepaths),
             "root": match_root.info(filepaths),
             "string": match_strings.get(filepaths),
+            "activity_counts": activity_counts(activity),
             "family": family,
             "sandbox": sandbox.url(md5),
             "elapsed_time": round(time.time() - time_start, 2)
