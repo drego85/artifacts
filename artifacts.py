@@ -10,23 +10,7 @@ from lib import sandbox, similarity, report
 from litejdb import LiteJDB
 from prettytable import PrettyTable
 
-__version__ = '1.1.4'
-
-# 1.1.4 Added: Zip Header Fixer and Archive detect
-# 1.1.3 Fixed: Skip files with unsupported compression methods during extraction
-# 1.1.2 Fixed: Resolved conflict during extraction by renaming directories with names matching existing files
-# 1.1.1 Fixed: Joesanbox url, updated strings to match and added koodous sandbox
-# 1.1.0 Removed: 'activity' and 'report' from json, now they are used separately
-# 1.0.9 Fixed: ZeroDivisionError in similarity
-# 1.0.8 Added: LiteJDB support to 'add', 'del' and 'list'
-# 1.0.7 Added: Similarity table with prettytable dependency
-# 1.0.6 Fixed: jaccard similarity coefficient and added updatedb
-# 1.0.5 Added: Checks if decoded base64 string matches the regex
-# 1.0.4 Added: Decodes base64 strings
-# 1.0.3 Fixed: Permission non found in result["activity"]["permission"]
-# 1.0.2 Fixed: extractAPK file name too long
-# 1.0.1 Added: details to family
-# 1.0.0 start project
+__version__ = '1.2.0'
 
 # Load json database
 def load_db():
