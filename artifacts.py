@@ -164,6 +164,8 @@ def main():
             "md5": hashes.get("md5"),
             "sha1": hashes.get("sha1"),
             "sha256": hashes.get("sha256"),
+            "package_name": activity.get("package_name"),
+            "main_activity": activity.get("main_activity"),
             "dex": search_file.extension_sort(filepaths, '.dex'),
             "library": search_file.extension_sort(filepaths, '.so'),
             "archive": archives,
