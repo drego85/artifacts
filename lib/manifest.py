@@ -30,7 +30,7 @@ def info(apk_path: str) -> Dict[str, List[str]]:
     }
 
     for key, pattern in regex.items():
-        matches = sorted(set(re.findall(pattern, manifest_xml)))
+        matches = sorted({match for match in re.findall(pattern, manifest_xml)}, key=str.casefold)
         result[key] = matches
 
     return result
