@@ -18,6 +18,7 @@ Follow standard Python style: 4-space indents, snake_case identifiers, and modul
 - Keep `activity_counts` ordered as `permission`, `application`, `intent` and ensure the values reflect the number of *unique* items extracted from the manifest/intents.
 - `python3 artifacts.py --list-all` now emits a PrettyTable sorted alphabetically by family with the counts of permissions/applications/intents. Any changes to LiteJDB schemas should keep this tabular contract intact.
 - When populating the internal DB (`python3 artifacts.py sample.apk --add NAME`) always pass the APK path as the positional argument so the permission/application/intent buckets are derived from an actual manifest, not manual edits.
+- Include `package_name` and the resolved launcher `main_activity` in the report output; source them via `lib/manifest.py` rather than reimplementing manifest parsing elsewhere.
 
 ## Testing & Validation
 No automated suite exists yet, so rely on reproducible manual runs. Maintain a curated set of benign APKs that exercise dex extraction, manifest parsing, and string matching, and note the commands you ran (`python3 artifacts.py demo.apk --activity`, etc.) in the PR. When adding detection content, craft minimal JSON fixtures under `data/` and verify the CLI surfaces them cleanly so future pytest coverage can hook in.
