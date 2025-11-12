@@ -67,6 +67,8 @@ Sample output (truncated):
 {
   "version": "1.1.4",
   "md5": "ab879f4e8f9cf89652f1edd3522b873d",
+  "sha1": "0b36f0f2ddfd73be3452dc955a6c97c45b4f78e9",
+  "sha256": "4d0ec8e8c1fbbac866f38b5df31b3a775f482373789a9b6d33ad7bfb17e8c576",
   "dex": ["classes.dex"],
   "network": {
     "ip": ["1.1.1.1", "8.8.8.8"],

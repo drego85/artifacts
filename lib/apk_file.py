@@ -54,10 +54,18 @@ def extractAPK(apkfile, folder):
 
     return
 
-        
-def md5APK(apkfile):
+def hashAPK(apkfile, algorithms=("md5", "sha1", "sha256")):
+    if isinstance(algorithms, str):
+        algorithms = [algorithms]
+
+    hashers = {algo: hashlib.new(algo) for algo in algorithms}
+
     with open(apkfile, 'rb') as f:
-        file_hash = hashlib.md5()
         while chunk := f.read(8192):
-            file_hash.update(chunk)
-    return file_hash.hexdigest()
+            for hasher in hashers.values():
+                hasher.update(chunk)
+
+    return {algo: hasher.hexdigest() for algo, hasher in hashers.items()}
+
+def md5APK(apkfile):
+    return hashAPK(apkfile, "md5")["md5"]

@@ -129,7 +129,7 @@ def main():
     try:
         # Extract APK and start analysis
         apk_file.extractAPK(apkfile, folder)
-        md5 = apk_file.md5APK(apkfile)
+        hashes = apk_file.hashAPK(apkfile)
         filepaths = file_list.get(folder)
         activity = manifest.info(apkfile)
         activity.update(intent.info(filepaths))
@@ -161,7 +161,9 @@ def main():
         # Compile result data
         result = {
             "version": __version__,
-            "md5": md5,
+            "md5": hashes.get("md5"),
+            "sha1": hashes.get("sha1"),
+            "sha256": hashes.get("sha256"),
             "dex": search_file.extension_sort(filepaths, '.dex'),
             "library": search_file.extension_sort(filepaths, '.so'),
             "archive": archives,
@@ -170,7 +172,7 @@ def main():
             "string": match_strings.get(filepaths),
             "activity_counts": activity_counts(activity),
             "family": family,
-            "sandbox": sandbox.url(md5),
+            "sandbox": sandbox.url(hashes.get("md5")),
             "elapsed_time": round(time.time() - time_start, 2)
         }
         print(json.dumps(result, indent=4))
