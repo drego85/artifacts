@@ -47,13 +47,14 @@ def add_family(name, activity, db):
     if not db.query(f"name == '{name}'", "get_id"):
         db.add({
             'name': name,
-            'permission': activity['permission'],
-            'application': activity['application'],
-            'intent': activity['intent']
+            'permission': activity.get('permission', []),
+            'application': activity.get('application', []),
+            'intent': activity.get('intent', [])
         })
         db.save()
+        print(f"Family '{name}' added to database.")
     else:
-        print(f"{name} already exists")
+        print(f"Family '{name}' already exists.")
 
 # List families in LiteJDB
 def list_families(db):
