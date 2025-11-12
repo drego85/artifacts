@@ -21,7 +21,7 @@
 ## Key Features
 
 - **Robust extraction** – `apkInspector.headers.ZipEntry` lets us unpack obfuscated or tampered APKs directly inside the working temp folder, avoiding the limitations of Python's `zipfile`.
-- **Manifest decoding** – `apkInspector.axml.parse_apk_for_manifest` decodes `AndroidManifest.xml` even when it is still in binary form, so we can read permissions/applicationId without fully expanding the archive.
+- **Manifest decoding** – `apkInspector.axml.parse_apk_for_manifest` decodes `AndroidManifest.xml` even when it is still in binary form, so we can read permissions/applicationId, package name, and launcher activity without fully expanding the archive.
 - **String & IOC hunting** – regexes for Base64, URLs/IPs, Telegram IDs, plus curated network/root indicators stored in `data/*.json`.
 - **Similarity scoring** – compares the extracted permission/application sets against the LiteJDB database (`data/patterns.json`) to suggest the closest family match.
 - **Actionable reports** – `-r` builds a structured JSON report, `-s` prints similarity tables, `--activity` dumps the decoded manifest details.
@@ -69,6 +69,8 @@ Sample output (truncated):
   "md5": "ab879f4e8f9cf89652f1edd3522b873d",
   "sha1": "0b36f0f2ddfd73be3452dc955a6c97c45b4f78e9",
   "sha256": "4d0ec8e8c1fbbac866f38b5df31b3a775f482373789a9b6d33ad7bfb17e8c576",
+  "package_name": "fdgfhfgjhfgj.dfgdfgdfhfjfgj.sdgdfgdfhd",
+  "main_activity": "com.brkwl.apkstore.MainActivity",
   "dex": ["classes.dex"],
   "network": {
     "ip": ["1.1.1.1", "8.8.8.8"],
