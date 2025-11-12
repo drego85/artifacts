@@ -83,6 +83,14 @@ Sample output (truncated):
 }
 ```
 
+### How family matching works
+
+- **Feature extraction** – `lib/manifest.py` parses the decoded manifest and normalizes the three indicator buckets (`permission`, `application`, `intent`) as alphabetically sorted lists.
+- **Family dataset** – each entry in `data/patterns.json` provides the expected indicators for a known malware family. When you run `artifacts.py … -s`, the CLI loads this dataset via LiteJDB.
+- **Per-bucket scoring** – for every family we compute the [Jaccard similarity](https://en.wikipedia.org/wiki/Jaccard_index) between the APK bucket and the family bucket (e.g., `permission_score = |perm_apk ∩ perm_family| / |perm_apk ∪ perm_family| * 100`). The same formula is applied to `application` and `intent`.
+- **Final score** – the reported `family.match` is the arithmetic mean of the three bucket scores (all equally weighted). The `family.value` object surfaces the individual bucket percentages so you can tell *why* a match ranked higher (e.g., strong intent overlap but few shared permissions).
+- **Interpreting the report** – identical APK permissions can still yield different percentages if the top-ranked family changes, because each family contributes its own reference set. Log the similarity table (`-s`) to compare how your indicators intersect with multiple candidates.
+
 ## CLI Commands
 
 | Flag | Description |
