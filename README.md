@@ -102,7 +102,7 @@ Sample output (truncated):
 | `-a, --activity` | Dump decoded manifest activities/permissions. |
 | `-l, --list-all` | List all families tracked in LiteJDB with the number of permissions, applications, and intents each entry defines. |
 | `--del NAME` | Remove a family from the DB. |
-| `--add NAME` | Add the currently analyzed APK to the DB under `NAME`. |
+| `--add NAME` | Add the currently analyzed APK (pass the malware sample as the positional argument) to the DB under `NAME`. |
 
 ## Datasets & Reporting
 
