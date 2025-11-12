@@ -8,6 +8,7 @@ from lib import apk_file, file_list, json_file, search_file, intent, manifest
 from lib import match_strings, match_network, match_root
 from lib import sandbox, similarity, report
 from litejdb import LiteJDB
+from prettytable import PrettyTable
 
 __version__ = '1.1.4'
 
@@ -56,8 +57,31 @@ def add_family(name, activity, db):
 
 # List families in LiteJDB
 def list_families(db):
-    for index, row in db.df().iterrows():
-        print(row['name'])
+    df = db.df()
+
+    if df.empty:
+        print("No families stored in LiteJDB.")
+        return
+
+    def normalize(values):
+        if not values:
+            return []
+        if isinstance(values, (set, tuple)):
+            values = list(values)
+        if isinstance(values, str):
+            values = [values]
+        return sorted(values, key=str.casefold)
+
+    table = PrettyTable(["Family", "Permission", "Application", "Intent"])
+
+    for _, row in df.sort_values("name").iterrows():
+        counts = []
+        for bucket in ("permission", "application", "intent"):
+            values = normalize(row[bucket] if bucket in row and row[bucket] is not None else [])
+            counts.append(len(values))
+        table.add_row([row["name"], *counts])
+
+    print(table)
 
 # Main function for APK analysis
 def main():

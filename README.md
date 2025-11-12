@@ -100,7 +100,7 @@ Sample output (truncated):
 | `-r, --report` | Emit a structured JSON report. |
 | `-s, --similarity` | Display the similarity table against the family DB. |
 | `-a, --activity` | Dump decoded manifest activities/permissions. |
-| `-l, --list-all` | List all families tracked in LiteJDB. |
+| `-l, --list-all` | List all families tracked in LiteJDB with the number of permissions, applications, and intents each entry defines. |
 | `--del NAME` | Remove a family from the DB. |
 | `--add NAME` | Add the currently analyzed APK to the DB under `NAME`. |
 
