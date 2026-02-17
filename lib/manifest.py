@@ -74,6 +74,20 @@ def _collect_component_names(root: ET.Element, package_name: Optional[str]) -> L
     return sorted(names, key=str.casefold)
 
 
+def _clean_xml_for_parsing(xml_text: str) -> str:
+    """Drop characters that are not valid in XML 1.0 documents."""
+    def is_valid_xml_char(char: str) -> bool:
+        code = ord(char)
+        return (
+            code in (0x9, 0xA, 0xD)
+            or 0x20 <= code <= 0xD7FF
+            or 0xE000 <= code <= 0xFFFD
+            or 0x10000 <= code <= 0x10FFFF
+        )
+
+    return "".join(ch for ch in xml_text if is_valid_xml_char(ch))
+
+
 def info(apk_path: str) -> Dict[str, Union[List[str], str]]:
     """Extract manifest metadata directly from the APK using apkInspector."""
     result: Dict[str, Union[List[str], str]] = {}
@@ -93,8 +107,10 @@ def info(apk_path: str) -> Dict[str, Union[List[str], str]]:
     if isinstance(manifest_xml, bytes):
         manifest_xml = manifest_xml.decode("utf-8", errors="ignore")
 
+    manifest_xml_clean = _clean_xml_for_parsing(manifest_xml)
+
     try:
-        root = ET.fromstring(manifest_xml)
+        root = ET.fromstring(manifest_xml_clean)
     except ET.ParseError:
         root = None
 
@@ -116,7 +132,7 @@ def info(apk_path: str) -> Dict[str, Union[List[str], str]]:
     }
 
     for key, pattern in regex.items():
-        matches = sorted({match for match in re.findall(pattern, manifest_xml)}, key=str.casefold)
+        matches = sorted({match for match in re.findall(pattern, manifest_xml_clean)}, key=str.casefold)
         result[key] = matches
 
     if "application" not in result:
@@ -124,7 +140,7 @@ def info(apk_path: str) -> Dict[str, Union[List[str], str]]:
         disallowed_prefixes = ("android.permission.", "android.intent.", "android.content.")
         fallback_matches = {
             match
-            for match in re.findall(generic_app_regex, manifest_xml)
+            for match in re.findall(generic_app_regex, manifest_xml_clean)
             if not match.startswith(disallowed_prefixes)
         }
         fallback = sorted(fallback_matches, key=str.casefold)
