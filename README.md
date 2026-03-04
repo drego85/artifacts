@@ -48,6 +48,16 @@ Main dependencies:
 - [LiteJDB](https://github.com/guelfoweb/litejdb)
 - prettytable
 
+### Track unreleased apkInspector patches
+
+`apkInspector` is installed from the upstream GitHub repository (branch `main`) so this project can consume fixes before the next PyPI release.
+
+If you want reproducible builds, pin a specific commit instead of `main` in both `requirements.txt` and `pyproject.toml`:
+
+```text
+apkInspector @ git+https://github.com/erev0s/apkInspector.git@<commit_sha>
+```
+
 ## Quick Start
 
 ```bash
