@@ -121,6 +121,7 @@ Sample output (truncated):
 | `-s, --similarity` | Display the similarity table against the family DB. |
 | `-a, --activity` | Dump decoded manifest activities/permissions. |
 | `-l, --list-all` | List all families tracked in LiteJDB with the number of permissions, applications, and intents each entry defines. |
+| `--fast` | Faster scan: skip regex-heavy IOC extraction (`network`, `root`, `string`). |
 | `--del NAME` | Remove a family from the DB. |
 | `--add NAME` | Add the currently analyzed APK (pass the malware sample as the positional argument) to the DB under `NAME`. |
 

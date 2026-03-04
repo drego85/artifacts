@@ -91,6 +91,11 @@ def main():
     parser.add_argument("-s", "--similarity", help="shows the similarities", action="store_true")
     parser.add_argument("-a", "--activity", help="shows the activities", action="store_true")
     parser.add_argument("-l", "--list-all", help="Lists all families in the db", action="store_true")
+    parser.add_argument(
+        "--fast",
+        help="skip regex-heavy IOC extraction (ip/url/base64/telegram/root) for faster analysis",
+        action="store_true"
+    )
     parser.add_argument("--del", help="Delete a family from db", dest="family_to_del")
     parser.add_argument("--add", help="Add a new family to db", dest="family_to_add")
     args = parser.parse_args()
@@ -150,6 +155,15 @@ def main():
             return
 
         # Compile result data
+        if args.fast:
+            network = {"ip": [], "url": [], "param": []}
+            root = []
+            string = {"base64": [], "telegram_id": [], "known": []}
+        else:
+            network = match_network.get(filepaths)
+            root = match_root.info(filepaths)
+            string = match_strings.get(filepaths)
+
         result = {
             "version": __version__,
             "md5": hashes.get("md5"),
@@ -160,9 +174,9 @@ def main():
             "dex": search_file.extension_sort(filepaths, '.dex'),
             "library": search_file.extension_sort(filepaths, '.so'),
             "archive": archives,
-            "network": match_network.get(filepaths),
-            "root": match_root.info(filepaths),
-            "string": match_strings.get(filepaths),
+            "network": network,
+            "root": root,
+            "string": string,
             "activity_counts": activity_counts(activity),
             "family": family,
             "sandbox": sandbox.url(hashes.get("md5")),
