@@ -2,7 +2,6 @@ import os
 import shutil
 import hashlib
 import logging
-import zipfile
 from apkInspector.headers import ZipEntry
 
 logging.basicConfig(level=logging.WARNING)
@@ -10,11 +9,8 @@ logging.basicConfig(level=logging.WARNING)
 CONFLICTS_DIR = "__apk_path_conflicts__"
 
 
-def _path_conflicts_in_apk(apkfile):
+def _path_conflicts_from_names(names):
     """Return file paths that are also used as parent directories."""
-    with zipfile.ZipFile(apkfile) as archive:
-        names = archive.namelist()
-
     files = [name.rstrip("/") for name in names if name and not name.endswith("/")]
     file_set = set(files)
     conflicts = set()
@@ -28,6 +24,13 @@ def _path_conflicts_in_apk(apkfile):
                 conflicts.add(prefix)
 
     return conflicts
+
+
+def _path_conflicts_in_apk(apkfile):
+    with open(apkfile, "rb") as apk_stream:
+        zip_entry = ZipEntry.parse(apk_stream)
+        names = zip_entry.namelist()
+    return _path_conflicts_from_names(names)
 
 
 def _rewrite_conflicting_path(name, conflicts):
@@ -65,7 +68,7 @@ def _extract_apk_safe(apkfile, folder, conflicts=None):
         names = [name for name in zip_entry.namelist() if name and not name.endswith("/")]
 
         if conflicts is None:
-            conflicts = _path_conflicts_in_apk(apkfile)
+            conflicts = _path_conflicts_from_names(names)
         for name in names:
             mapped_name = _rewrite_conflicting_path(name, conflicts)
             relative_path = _sanitize_member_path(mapped_name)
@@ -96,15 +99,6 @@ def extractAPK(apkfile, folder):
     if not os.path.isdir(folder):
         os.makedirs(folder, exist_ok=True)
 
-    conflicts = _path_conflicts_in_apk(apkfile)
-    if conflicts:
-        logging.warning(
-            "APK contains file/path collisions (%s). Using safe extraction mode.",
-            ", ".join(sorted(conflicts))
-        )
-        _extract_apk_safe(apkfile, folder, conflicts=conflicts)
-        return
-
     apk_label = os.path.splitext(os.path.basename(apkfile))[0]
 
     try:
@@ -112,16 +106,29 @@ def extractAPK(apkfile, folder):
             zip_entry = ZipEntry.parse(apk_stream)
             result_code = zip_entry.extract_all(folder, apk_label)
     except Exception as exc:
+        print(f"[WARNING] apkInspector extraction failed ({exc}). Falling back to safe mode.")
         logging.warning("apkInspector extraction failed (%s). Retrying in safe mode.", exc)
         _extract_apk_safe(apkfile, folder)
         return
 
     if result_code not in (0, 2, None):
-        raise RuntimeError(f"apkInspector extract_all returned unexpected code {result_code}")
+        print(
+            f"[WARNING] apkInspector returned code {result_code}. "
+            "Falling back to safe mode."
+        )
+        logging.warning(
+            "apkInspector extract_all returned code %s. Retrying in safe mode.",
+            result_code
+        )
+        _extract_apk_safe(apkfile, folder)
+        return
 
     extracted_files = list(os.scandir(folder))
     if not extracted_files:
-        raise RuntimeError("apkInspector reported success but no files were extracted.")
+        print("[WARNING] apkInspector reported success but no files were extracted. Falling back to safe mode.")
+        logging.warning("apkInspector reported success but no files were extracted. Retrying in safe mode.")
+        _extract_apk_safe(apkfile, folder)
+        return
 
     if apk_label:
         nested_dir = os.path.join(folder, apk_label)
