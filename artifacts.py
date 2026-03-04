@@ -107,6 +107,12 @@ def main():
             parser.print_help()
         sys.exit()
 
+    if not os.path.exists(apkfile):
+        parser.exit(2, f"Error: APK file not found: {apkfile}\n")
+
+    if not os.path.isfile(apkfile):
+        parser.exit(2, f"Error: Path is not a file: {apkfile}\n")
+
     folder = os.path.basename(apkfile + "_tmp")
     os.makedirs(folder, exist_ok=True)
     time_start = time.time()
